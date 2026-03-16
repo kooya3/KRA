@@ -64,7 +64,7 @@ class ResponseStatus(str, Enum):
 class APIResponse(BaseModel):
     ResponseCode: str
     Message: str
-    Status: ResponseStatus
+    Status: str  # Can be "OK" or "NOK" or the ResponseStatus enum
     AckNumber: Optional[str] = None
 
 

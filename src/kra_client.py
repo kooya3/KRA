@@ -185,7 +185,36 @@ class KRAClient:
                 data=request_data.dict(),
             )
             
-            response = NilReturnResponse(**response_data)
+            # Debug: Log raw response to understand API format
+            logger.debug(f"Raw API response: {response_data}")
+            
+            # Handle different response formats
+            # Some KRA APIs return the response directly without "RESPONSE" wrapper
+            if "RESPONSE" in response_data:
+                processed_response = {"RESPONSE": response_data["RESPONSE"]}
+            elif "Response" in response_data:
+                # Convert camelCase to uppercase
+                resp = response_data["Response"]
+                processed_response = {
+                    "RESPONSE": {
+                        "ResponseCode": resp.get("ResponseCode") or resp.get("responseCode"),
+                        "Message": resp.get("Message") or resp.get("message"),
+                        "Status": resp.get("Status") or resp.get("status", "OK"),
+                        "AckNumber": resp.get("AckNumber") or resp.get("ackNumber"),
+                    }
+                }
+            else:
+                # Try to construct response from root level fields
+                processed_response = {
+                    "RESPONSE": {
+                        "ResponseCode": response_data.get("ResponseCode") or response_data.get("responseCode") or "82000",
+                        "Message": response_data.get("Message") or response_data.get("message") or "Success",
+                        "Status": response_data.get("Status") or response_data.get("status", "OK"),
+                        "AckNumber": response_data.get("AckNumber") or response_data.get("ackNumber") or response_data.get("RequestId"),
+                    }
+                }
+            
+            response = NilReturnResponse(**processed_response)
             
             self._handle_response_errors(response)
             
